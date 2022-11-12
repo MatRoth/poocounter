@@ -2,8 +2,11 @@ library(shiny)
 library(DBI)
 library(shinythemes)
 
+# Establish database connection (or create database)
 db <- DBI::dbConnect(RSQLite::SQLite(),"poobase.sqlite")
 
+
+# Functions to interact with the databas
 log_value <- function(event,intensity,db,table){
   current_table <- dbReadTable(db,table)
   cur_time <- format(Sys.time(), "%Y-%m-%d %H:%M:%S")
@@ -28,9 +31,11 @@ reset_table <- function(name,db){
   create_table(name,db)
 }
 
-
+# Create table in database if necessary
 if(!("pootable" %in% dbListTables(db))) create_table("pootable",db)
 
+
+#shiny functions
 ui <- fluidPage(
   theme = shinytheme("united"),
   titlePanel("PooTracker"),
@@ -48,6 +53,7 @@ ui <- fluidPage(
     ),
     tabPanel(
       "Data analysis"
+
     )
   ),
 
