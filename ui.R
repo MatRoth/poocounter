@@ -1,16 +1,19 @@
 library(shiny)
 library(shinyMobile)
-library(apexcharter)
 library(shinyWidgets)
 
+
 ui <- f7Page(
-  title = "Still tracker",
+  title = "Still tracker",options = list(theme = "md",dark = T),
   f7TabLayout(
     panels = tagList(
-      f7Panel(title = "Anleitung", side = "left", theme = "light", "Im linken Tab kannst du Daten eintragen.\n Im rechten Tab kannst du dir Ergebnisse ansehen.", effect = "cover"),
-      f7Panel(title = "Right Panel", side = "right", theme = "dark", "Blabla", effect = "cover")
+      f7Panel(title = "Anleitung",
+              side = "left",
+              theme = "dark",
+              effect = "cover",
+              "Im linken Tab kannst du Daten eintragen.\n Im rechten Tab kannst du dir Ergebnisse ansehen.",
+              f7Button(inputId = "reset_table",label = "Daten zurücksetzen"))
     ),
-    options = list(theme = "md"),
     navbar = f7Navbar(
       title = "Still tracker",
       hairline = TRUE,
@@ -22,34 +25,44 @@ ui <- f7Page(
       animated = TRUE,
       #swipeable = TRUE,
       f7Tab(
-        tabName = "Daten eintragen",
+        title = "Daten eintragen",
+        tabName = "data_entry",
         icon = f7Icon("pencile"),
         active = TRUE,
-        f7Shadow(
-          intensity = 10,
-          hover = TRUE,
-          f7Card(
-            title = "Was willst du eintragen?",
-            f7List(
-              f7ListItem("Stillen",f7Button(inputId = "log_feed",label="Eintragen",size = "small")),
-              f7ListItem("Stuhlgang",f7Button(inputId = "log_food",label="Eintragen",size = "small")),
-              f7ListItem("Letzen Eintrag löschen",f7Button(inputId = "delete_last",label = "Löschen",size = "small"))
-            )
-          )
-        )
-      ),
+        f7BlockTitle(title = "Stillen"),
+        f7Segment(
+          shadow = TRUE,
+          container = "segment",
+          f7Button(inputId = "feed_1",label = "Links", outline = TRUE, fill = FALSE),
+          f7Button(inputId = "feed_2",label = "Rechts", outline = TRUE, fill = FALSE),
+          f7Button(inputId = "feed_3",label = "Links + Rechts", outline = TRUE, fill = FALSE)
+        ),
+        f7BlockTitle(title = "Stuhlgang"),
+        f7Segment(
+          shadow = TRUE,
+          container = "segment",
+          f7Button(inputId = "poo_1",label = "Pipi", outline = TRUE, fill = FALSE),
+          f7Button(inputId = "poo_2",label = "Kacka", outline = TRUE, fill = FALSE),
+          f7Button(inputId = "poo_3",label = "Pipi + Kacka", outline = TRUE, fill = FALSE)
+        ),
+        f7Card(title = "Letze Einträge"),
+        uiOutput("last_poo"),
+        f7Button(inputId = "delete_last",label = "Letzten Eintrag löschen")
+        ),
       f7Tab(
-        tabName = "Analyse",
+        title = "Analyse",
+        tabName = "analysis",
         icon = f7Icon("graph_square"),
         active = FALSE,
         f7Shadow(
           intensity = 10,
           hover = TRUE,
           f7Card(
-            title = "Letztes Stillen",
+            title = "Letztes Stillen"
           )
         )
       )
     )
   )
 )
+

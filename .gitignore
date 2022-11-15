@@ -3,3 +3,4 @@
 .RData
 .Ruserdata
 cpy_to_srv.R
+poobase.sqlite
