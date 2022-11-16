@@ -54,15 +54,19 @@ ui <- f7Page(
         tabName = "analysis",
         icon = f7Icon("graph_square"),
         active = FALSE,
-        f7Shadow(
-          intensity = 10,
-          hover = TRUE,
-          f7Card(
-            title = "Letztes Stillen"
+        f7Card(
+            title = "Zeit seit dem letzten Stillen",
+            h2(textOutput("timer_feed")),
+            "(Stunden/Minuten)"
+          ),
+        f7Card(
+          title = "Zeit seit dem letzten Stuhlgang",
+          h2(textOutput("timer_poo")),
+          "(Stunden/Minuten)"
           )
         )
       )
     )
   )
-)
+
 

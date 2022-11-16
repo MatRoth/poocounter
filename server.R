@@ -5,6 +5,8 @@ library(RSQLite)
 library(tibble)
 library(DBI)
 library(dplyr)
+library(ggplot2)
+library(lubridate)
 
 
 # Establish database connection (or create database)
@@ -39,6 +41,20 @@ reset_table <- function(name,db){
 # Create table in database if necessary
 if(!("pootable" %in% dbListTables(db))) create_table("pootable",db)
 
+
+get_time_since <- function(cond){
+  cur_table<-retrive_table("pootable",db)
+  last_time <- cur_table[cur_table$event %in% cond,2] |>
+    tail(n=1)|>pull()
+  last_seconds <- as.duration((as_datetime(last_time)-Sys.time()))|>
+    round()|>
+    as.numeric()
+  last_hour <- abs(floor(last_seconds/60/60))
+  last_minute <- abs(60-round((last_seconds/60) %% 60))
+  if(last_hour < 10) last_hour <- paste0(0,as.character(last_hour)) else last_hour <- as.character(last_hour)
+  if(last_minute < 10) last_minute <- paste0(0,as.character(last_minute)) else last_minute <- as.character(last_minute)
+  list(last_hour,last_minute)
+}
 
 #server functions
 server <- function(input, output, session) {
@@ -83,5 +99,28 @@ server <- function(input, output, session) {
   })
 
   # Analysis
+  # Timers since the last poo/feed
+  render_feed_timer <- reactive({
+    invalidateLater(30000, session)
+    cur_times<-get_time_since(c("Links","Rechts","Links + Rechts"))
+    paste0(cur_times[[1]],":",cur_times[[2]])
+  }) |> bindEvent(input$feed_1,
+                  input$feed_2,
+                  input$feed_3,
+                  input$delete_last,
+                  input$reset_table_dialog,ignoreNULL = T)
+  output$timer_feed <- renderText({render_feed_timer()})
 
+  render_poo_timer <- reactive({
+    invalidateLater(30000, session)
+    cur_times<-get_time_since(c("Pipi","Kacka","Pipi + Kacka"))
+    paste0(cur_times[[1]],":",cur_times[[2]])})|>
+    bindEvent(input$poo_1,
+              input$poo_2,
+              input$poo_3,
+              input$delete_last,
+              input$reset_table_dialog,ignoreNULL = T)
+  output$timer_poo <- renderText({render_poo_timer()})
+  #output$test <- renderPlot(ggplot(retrive_table("pootable",db),
+  #                      aes(time,as.factor(event))))
 }
