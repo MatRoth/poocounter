@@ -4,7 +4,7 @@ library(shinyWidgets)
 
 
 ui <- f7Page(
-  title = "Still tracker",options = list(theme = "md",dark = T),
+  title = "Still tracker",options = list(theme = "md",dark = T,pullToRefresh = T),
   f7TabLayout(
     panels = tagList(
       f7Panel(title = "Anleitung",
@@ -25,8 +25,8 @@ ui <- f7Page(
       animated = TRUE,
       #swipeable = TRUE,
       f7Tab(
-        title = "Daten eintragen",
-        tabName = "data_entry",
+        title = "Daten Eintragen",
+        tabName = "dataentry",
         icon = f7Icon("pencile"),
         active = TRUE,
         f7BlockTitle(title = "Stillen"),
@@ -45,9 +45,11 @@ ui <- f7Page(
           f7Button(inputId = "poo_2",label = "Kacka", outline = TRUE, fill = FALSE),
           f7Button(inputId = "poo_3",label = "Pipi + Kacka", outline = TRUE, fill = FALSE)
         ),
-        f7Card(title = "Letze Einträge"),
-        uiOutput("last_poo"),
-        f7Button(inputId = "delete_last",label = "Letzten Eintrag löschen")
+        f7Card(
+          title = "Letze Einträge"),
+          uiOutput("last_poo"),
+          f7Button(inputId = "openentr",label = "Daten Nachtragen"),
+          f7Button(inputId = "delete_last",label = "Letzten Eintrag löschen")
         ),
       f7Tab(
         title = "Analyse",

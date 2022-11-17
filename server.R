@@ -14,9 +14,8 @@ db <- dbConnect(SQLite(),"poobase.sqlite")
 
 
 # Functions to interact with the databas
-log_value <- function(event,db,table){
+log_value <- function(event,db,table,cur_time = format(Sys.time(), "%Y-%m-%d %H:%M:%S")){
   current_table <- dbReadTable(db,table)
-  cur_time <- format(Sys.time(), "%Y-%m-%d %H:%M:%S")
   if(nrow(current_table) == 0) cur_id = 1 else cur_id = max(current_table$id)+1
   next_values <- tibble(id = cur_id,time = cur_time,event = event)
   dbWriteTable(db,table,next_values,append = T)
@@ -67,8 +66,62 @@ server <- function(input, output, session) {
   observeEvent(input$poo_2 ,{log_value(event = "Kacka",db = db,table = "pootable")})
   observeEvent(input$poo_3 ,{log_value(event = "Pipi + Kacka",db = db,table = "pootable")})
 
+  # db manipulation buttons
+  # delete the last entry
   observeEvent(input$delete_last,
+               {f7Dialog(
+                 id = "delete_last_dialog",
+                 title = "Löschen des letzten Eintrags",
+                 text = "Sicher, dass der letzte Eintrag gelöscht werden soll?",
+                 type = "confirm"
+               )})
+  observeEvent(input$delete_last_dialog,
                {dbExecute(conn = db,paste0("DELETE FROM pootable WHERE ID=",nrow(retrive_table("pootable",db))))})
+
+  observeEvent(input$openentr,
+               { f7Popup(id = "entrylater",
+                         title = "Daten Nachtragen",closeButton = T,
+                         f7DatePicker(inputId = "date",label = "Daten eintragen", dateFormat = "yyyy-mm-dd"),
+                         f7Stepper(
+                           inputId = "stepper_hour",
+                           label = "Stunde",
+                           min = 0,
+                           max = 24,
+                           size = "small",
+                           value = hour(Sys.time()),
+                           wraps = TRUE,
+                           autorepeat = TRUE,
+                           rounded = FALSE,
+                           raised = FALSE,
+                           manual = FALSE
+                         ),
+                         f7Stepper(
+                           inputId = "stepper_minute",
+                           label = "Minute",
+                           min = 0,
+                           max = 59,
+                           size = "small",
+                           value = minute(Sys.time()),
+                           wraps = TRUE,
+                           autorepeat = TRUE,
+                           rounded = FALSE,
+                           raised = FALSE,
+                           manual = FALSE
+                         ),
+                         f7SmartSelect(inputId = "data_entry_event",
+                                       label="Eventtyp",
+                                       choices = c("Links","Rechts","Links + Rechts",
+                                                   "Pipi","Kacka","Pipi + Kacka"),
+                                       openIn = "sheet"),
+                         f7Button(inputId = "log_data_entry","Eintragen")
+                        )
+                 })
+  observeEvent(input$log_data_entry,
+               {log_value(event = input$data_entry_event,
+                          db = db,
+                          table = "pootable",
+                          cur_time = paste0(input$date," ",input$stepper_hour,":",input$stepper_minute,":","00") )})
+
   observeEvent(input$reset_table,
                {f7Dialog(
                  id = "reset_table_dialog",
@@ -85,15 +138,19 @@ server <- function(input, output, session) {
   lpt<-reactive({
     cur_table<-retrive_table("pootable",db)
     nrow_cur_table <-nrow(cur_table)
-    tail(cur_table,n=pmin(5,nrow_cur_table))[rev(1:pmin(5,nrow_cur_table)),]
+    setNames(tail(cur_table,n=pmin(5,nrow_cur_table))[rev(1:pmin(5,nrow_cur_table)),2:3],
+             c("Uhrzeit","Event")
+    )
   })|> bindEvent(input$feed_1,
                  input$feed_2,
                  input$feed_3,
                  input$poo_1,
                  input$poo_2,
                  input$poo_3,
-                 input$delete_last,
-                 input$reset_table_dialog,ignoreNULL = T)
+                 input$delete_last_dialog,
+                 input$reset_table_dialog,
+                 input$log_data_entry,
+                 ignoreNULL = T)
   output$last_poo <- renderUI({
     f7Table(lpt())
   })
@@ -107,7 +164,7 @@ server <- function(input, output, session) {
   }) |> bindEvent(input$feed_1,
                   input$feed_2,
                   input$feed_3,
-                  input$delete_last,
+                  input$delete_last_dialog,
                   input$reset_table_dialog,ignoreNULL = T)
   output$timer_feed <- renderText({render_feed_timer()})
 
@@ -118,7 +175,7 @@ server <- function(input, output, session) {
     bindEvent(input$poo_1,
               input$poo_2,
               input$poo_3,
-              input$delete_last,
+              input$delete_last_dialog,
               input$reset_table_dialog,ignoreNULL = T)
   output$timer_poo <- renderText({render_poo_timer()})
   #output$test <- renderPlot(ggplot(retrive_table("pootable",db),
