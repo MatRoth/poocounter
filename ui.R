@@ -48,8 +48,8 @@ ui <- f7Page(
         f7Card(
           title = "Letze Einträge"),
           uiOutput("last_poo"),
-          f7Button(inputId = "openentr",label = "Daten Nachtragen"),
-          f7Button(inputId = "delete_last",label = "Letzten Eintrag löschen")
+          f7Button(inputId = "openentr",label = "Daten Nachtragen",outline = T,fill = F),
+          f7Button(inputId = "delete_last",label = "Letzten Eintrag löschen",outline = T,fill=F)
         ),
       f7Tab(
         title = "Analyse",

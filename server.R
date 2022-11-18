@@ -120,7 +120,17 @@ server <- function(input, output, session) {
                {log_value(event = input$data_entry_event,
                           db = db,
                           table = "pootable",
-                          cur_time = paste0(input$date," ",input$stepper_hour,":",input$stepper_minute,":","00") )})
+                          cur_time = paste0(input$date,
+                                            " ",
+                                            ifelse(input$stepper_hour < 10,
+                                                   paste0(0,input$stepper_hour),
+                                                   input$stepper_hour),
+                                            ":",
+                                            ifelse(input$stepper_minute < 10,
+                                                   paste0(0,input$stepper_minute),
+                                                   input$stepper_minute),
+                                            ":",
+                                            "00") )})
 
   observeEvent(input$reset_table,
                {f7Dialog(
