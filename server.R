@@ -1,16 +1,18 @@
 library(shiny)
 library(shinyMobile)
-library(shinyWidgets)
 library(RSQLite)
 library(tibble)
 library(DBI)
 library(dplyr)
+library(purrr)
+library(tidyr)
 library(ggplot2)
 library(lubridate)
+library(stringr)
 
 
 # Establish database connection (or create database)
-db <- dbConnect(SQLite(),"poobase.sqlite")
+db <- dbConnect(SQLite(),"/srv/shiny-server/poosrv/poobase.sqlite")
 
 
 # Functions to interact with the databas
@@ -53,6 +55,45 @@ get_time_since <- function(cond){
   if(last_hour < 10) last_hour <- paste0(0,as.character(last_hour)) else last_hour <- as.character(last_hour)
   if(last_minute < 10) last_minute <- paste0(0,as.character(last_minute)) else last_minute <- as.character(last_minute)
   list(last_hour,last_minute)
+}
+
+get_time_since_min <- function(cond){
+  cur_table<-retrive_table("pootable",db)
+  last_time <- cur_table[cur_table$event %in% cond,2] |>
+    pull()|>
+    sort()
+  last_time <- last_time[length(last_time)]
+  last_seconds <- as.duration((as_datetime(last_time)-Sys.time()))|>
+    round()|>
+    as.numeric()
+  round(abs(last_seconds/60))
+}
+
+# analysis functions
+get_poo_analysis_data <- function(){
+  data<-dbReadTable(db,"pootable") |>
+    as_tibble() |>
+    mutate(time = map_dbl(time,as_datetime))|>
+    arrange(time)
+  poo_data<-data |>
+    dplyr::filter(str_detect(event,"Kacka")) |>
+    mutate(time = as_datetime(time),
+           diff_to_last = c(NA_real_,map2_dbl(time[-length(time)],time[-1],
+                                              \(left,right){
+                                                difftime(left,right,units="mins") |> as.double()
+                                              })) |>
+        abs() |>
+        round()) |>
+    drop_na() |>
+    filter(diff_to_last < 300) |>
+    mutate(diff_to_last_lag = lag(diff_to_last)) |>
+    drop_na()
+
+  poo_data
+}
+
+prob_of_event <- function(cur_time,time_ahead,shape,rate){
+  pgamma(cur_time+time_ahead,shape,rate)
 }
 
 #server functions
@@ -175,6 +216,7 @@ server <- function(input, output, session) {
                   input$feed_2,
                   input$feed_3,
                   input$delete_last_dialog,
+                  input$log_data_entry,
                   input$reset_table_dialog,ignoreNULL = T)
   output$timer_feed <- renderText({render_feed_timer()})
 
@@ -186,8 +228,26 @@ server <- function(input, output, session) {
               input$poo_2,
               input$poo_3,
               input$delete_last_dialog,
+              input$log_data_entry,
               input$reset_table_dialog,ignoreNULL = T)
   output$timer_poo <- renderText({render_poo_timer()})
+  render_poo_prob <- reactive({
+    poo_data <- get_poo_analysis_data()
+
+    #gamma_model <- MASS::fitdistr(poo_data$diff_to_last,"Gamma")
+    shape <- 3.99
+    rate <- 0.0267
+    prob<-prob_of_event(get_time_since_min(c("Kacka","Pipi + Kacka")),30,shape = shape ,rate = rate)|>
+      round(2)
+    paste0(prob*100,"%")})|>
+    bindEvent(input$poo_1,
+              input$poo_2,
+              input$poo_3,
+              input$delete_last_dialog,
+              input$log_data_entry,
+              input$reset_table_dialog,ignoreNULL = T)
+  output$prob_poo <- renderText({render_poo_prob()})
+  #output$prob_poo <- renderText({get_time_since_min(c("Kacka","Pipi + Kacka"))})
   #output$test <- renderPlot(ggplot(retrive_table("pootable",db),
   #                      aes(time,as.factor(event))))
 }

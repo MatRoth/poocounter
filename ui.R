@@ -65,7 +65,11 @@ ui <- f7Page(
           title = "Zeit seit dem letzten Stuhlgang",
           h2(textOutput("timer_poo")),
           "(Stunden/Minuten)"
-          )
+          ),
+        f7Card(
+          title = "Wahrscheinlichkeit, dass Stuhlgang in 30 Minuten kommt.",
+          h2(textOutput("prob_poo"))
+        )
         )
       )
     )
